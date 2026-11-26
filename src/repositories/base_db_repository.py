@@ -157,6 +157,10 @@ class BaseDbRepository(BaseRepositoryInterface, Generic[ModelType, FullSchema, S
         try:
             await self._async_db_session.flush()
             await self._async_db_session.refresh(model)
+            # Коммитим до возврата ответа клиенту: иначе следующий запрос может
+            # прийти раньше коммита (teardown зависимости выполняется после отправки
+            # ответа) и увидеть устаревшие данные.
+            await self.commit()
         except IntegrityError as exc:
             await self._async_db_session.rollback()
 
@@ -179,5 +183,6 @@ class BaseDbRepository(BaseRepositoryInterface, Generic[ModelType, FullSchema, S
         )
 
         result = await self._async_db_session.execute(statement=delete_statement)
+        await self.commit()
 
         return result.rowcount == 1
