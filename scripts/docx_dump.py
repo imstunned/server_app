@@ -36,6 +36,9 @@ def _qn(tag: str) -> str:
 
 IMG_EXT = {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".emf", ".wmf", ".tif", ".tiff", ".svg", ".webp"}
 
+# Части .docx, изображения которых попали в Markdown.
+USED_PARTS: set[str] = set()
+
 
 def iter_block_items(parent):
     """Параграфы и таблицы в порядке документа."""
@@ -128,6 +131,7 @@ def save_image(p: Paragraph, rid: str | None, counter: list[int], outdir: Path) 
     blob = getattr(part, "blob", None)
     if not blob:
         return None
+    USED_PARTS.add(str(part.partname))
     ext = Path(part.partname).suffix.lower() or ".png"
     counter[0] += 1
     name = f"img_{counter[0]:03d}{ext}"
@@ -181,22 +185,20 @@ def main() -> int:
     md_path = outdir / (src.stem + ".md")
     md_path.write_text("\n\n".join(blocks) + "\n", encoding="utf-8")
 
-    # добить все media, которые не были вставлены в текст (в т.ч. неиспользуемые)
+    # Докладываем media, которые не встречаются в тексте (в т.ч. неиспользуемые).
     with zipfile.ZipFile(src) as z:
         media = [n for n in z.namelist() if n.startswith("word/media/")]
-        extra = 0
+        unreferenced = [n for n in media if f"/{n}" not in USED_PARTS and n not in USED_PARTS]
         all_dir = outdir / "images_all"
-        all_dir.mkdir(exist_ok=True)
-        for n in media:
-            data = z.read(n)
-            target = all_dir / Path(n).name
-            if not target.exists():
-                target.write_bytes(data)
-                extra += 1
+        for n in unreferenced:
+            all_dir.mkdir(exist_ok=True)
+            (all_dir / Path(n).name).write_bytes(z.read(n))
 
     print(f"MD: {md_path} ({len(blocks)} блоков)")
     print(f"Картинок из текста: {counter[0]} -> {imgdir}")
-    print(f"Всего media в docx: {len(media)} (скопировано в {all_dir}: {extra} новых)")
+    print(f"Всего media в docx: {len(media)}; вне текста: {len(unreferenced)}")
+    if unreferenced:
+        print(f"  вне текста скопированы в {all_dir}")
     return 0
 
 
