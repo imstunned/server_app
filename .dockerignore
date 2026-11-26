@@ -1,0 +1,29 @@
+# Git
+.git
+.gitignore
+.gitattributes
+
+# Документация и исходники
+docs/
+scripts/
+*.docx
+README.md
+CHANGELOG.md
+
+# Виртуальные окружения
+.venv/
+.venv*/
+venv/
+
+# Кэш Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+
+# Секреты
+.env
+
+# IDE
+.idea/
+.vscode/

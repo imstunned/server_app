@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+
+# Virtual environments
+.venv/
+.venv*/
+venv/
+env/
+ENV/
+
+# Environment variables (секреты)
+.env
+.env.*
+!.env.example
+
+# IDE / редакторы
+.idea/
+.vscode/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Тесты и покрытие
+.pytest_cache/
+.coverage
+htmlcov/
+
+# БД (локальные файлы SQLite)
+*.db
+*.sqlite3
+
+# Исходные материалы методички
+*.docx
