@@ -11,7 +11,9 @@ from fastapi import status
 
 from src.controllers import PostController
 from src.dependencies import get_post_controller
+from src.schemas.data_transfer_objects import PostCreateDto
 from src.schemas.data_transfer_objects import PostFullDto
+from src.schemas.data_transfer_objects import PostShortDto
 from src.schemas.data_transfer_objects import PostUpdateDto
 
 post_router = APIRouter(
@@ -31,11 +33,11 @@ post_router = APIRouter(
     path='/many',
     summary='Список постов',
     description='Возвращает список всех постов блога.',
-    response_description='Список полных DTO постов.',
+    response_description='Список кратких DTO постов.',
 )
 async def get_post_many(
     post_controller: Annotated[PostController, Depends(get_post_controller)],
-) -> List[PostFullDto]:
+) -> List[PostShortDto]:
     """
     Получение списка постов.
     """
@@ -80,14 +82,14 @@ async def get_post_by_id(
     response_description='Полный DTO созданного поста.',
 )
 async def create_post(
-    post: PostFullDto,
+    post_create_dto: PostCreateDto,
     post_controller: Annotated[PostController, Depends(get_post_controller)],
 ) -> PostFullDto:
     """
     Создание поста.
     """
 
-    return await post_controller.create_post(post=post)
+    return await post_controller.create_post(post_create_dto=post_create_dto)
 
 
 @post_router.patch(
@@ -97,7 +99,7 @@ async def create_post(
     response_description='Полный DTO обновлённого поста.',
 )
 async def update_post(
-    post_update: PostUpdateDto,
+    post_update_dto: PostUpdateDto,
     post_controller: Annotated[PostController, Depends(get_post_controller)],
     post_id: int = Path(
         description='ID поста',
@@ -109,7 +111,7 @@ async def update_post(
     Обновление поста.
     """
 
-    post = await post_controller.update_post(post_id=post_id, post_update=post_update)
+    post = await post_controller.update_post(post_id=post_id, post_update_dto=post_update_dto)
 
     if post is None:
         raise HTTPException(

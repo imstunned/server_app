@@ -1,4 +1,4 @@
-"""DTO для частичного обновления поста."""
+"""DTO частичного обновления поста."""
 
 from typing import Optional
 
@@ -12,13 +12,13 @@ class PostUpdateDto(BaseSchema):
     DTO частичного обновления поста.
     """
 
-    author_name: Optional[str] = Field(
+    name: Optional[str] = Field(
         default=None,
-        description='Имя автора поста',
+        description='Название поста',
         min_length=1,
         max_length=255,
         kw_only=True,
-        examples=['Author'],
+        examples=['Мой первый пост'],
     )
     content: Optional[str] = Field(
         default=None,

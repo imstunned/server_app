@@ -1,21 +1,25 @@
 """Общие зависимости приложения."""
 
-from typing import List
+from passlib.context import CryptContext
+from sqlalchemy.ext.asyncio import async_sessionmaker
+from sqlalchemy.ext.asyncio import create_async_engine
 
-from src.schemas.data_transfer_objects import PostFullDto
+from settings import app_settings
+from .common_factories import get_sqlalchemy_async_session_generator
 
-posts: List[PostFullDto] = [
-    PostFullDto(id=1, author_name='Bob', content='52'),
-    PostFullDto(id=2, author_name='Billy', content='67'),
-    PostFullDto(id=3, author_name='John', content='Lorem ipsum'),
-]
+db_engine = create_async_engine(app_settings.SQL_DSN, echo=app_settings.IS_DEBUG)
+async_session_factory = async_sessionmaker(bind=db_engine, expire_on_commit=False)
+sqlalchemy_async_session_generator = get_sqlalchemy_async_session_generator(async_session_factory)
+
+# Для зависимостей шифрования паролей
+password_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
 
-async def get_posts() -> List[PostFullDto]:
+def get_password_context() -> CryptContext:
     """
-    Получение списка полных DTO постов.
+    Зависимость для внедрения контекста шифрования паролей.
 
-    :return: Список полных DTO постов.
+    :return: Контекст шифрования паролей.
     """
 
-    return posts
+    return password_context
