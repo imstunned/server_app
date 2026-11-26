@@ -1,0 +1,15 @@
+services:
+  blog-api:
+    image: blog-api-image
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: blog-api
+    ports:
+      - "8000:8000"
+    networks:
+      - default
+
+networks:
+  default:
+    driver: bridge
