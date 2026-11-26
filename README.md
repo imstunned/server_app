@@ -5,7 +5,7 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 
 ## Стек
 
-- Python 3.12
+- Python 3.12 в Docker-образе (локально проект проверен на 3.14)
 - FastAPI + Uvicorn
 - Pydantic v2 / pydantic-settings
 - PostgreSQL 17, SQLAlchemy 2 (async), asyncpg
@@ -13,7 +13,7 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 - JWT (python-jose), passlib + bcrypt
 - Docker / Docker Compose
 
-## Ветки
+## Ветки и теги
 
 | Ветка | Содержимое |
 | --- | --- |
@@ -27,6 +27,9 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 Схема работы (GitFlow): `feature/labN` → Merge Request → `develop` → `main`.
 Каждая следующая ветка создаётся от `develop` после вливания предыдущей
 лабораторной.
+
+Теги: `lab1`, `lab2`, `lab3`, `lab4` — состояние на момент сдачи каждой работы,
+`v1.0.0` — итоговая версия.
 
 ## Публикация на GitHub
 
@@ -70,17 +73,24 @@ git push -u origin feature/lab1 feature/lab2 feature/lab3 feature/lab4
 ├── requirements/
 │   └── requirements.txt    # зависимости проекта
 ├── docker/init-db.sql      # создание схем БД при старте контейнера
+├── docker/entrypoint.sh    # миграции + запуск uvicorn в контейнере
 ├── Dockerfile
 ├── docker-compose.yml
 ├── CHANGELOG.md            # отчёт по лабораторным + ответы на вопросы
-└── docs/                   # методичка в Markdown и изображения
+├── docs/                   # методичка в Markdown и изображения
+└── scripts/                # конвертация методички, публикация на GitHub
 ```
 
 ## Материалы
 
-- `docs/metodichka_servernye_prilozhenia.md` — методичка в Markdown
-- `docs/images/` — изображения, извлечённые из методички
-- `scripts/docx_dump.py` — скрипт конвертации `.docx` → Markdown + изображения
+- `docs/metodichka_servernye_prilozhenia.md` — методичка в Markdown (все 7 ЛР)
+- `docs/images/` — 12 изображений, извлечённых из методички
+- `scripts/docx_dump.py` — конвертация `.docx` → Markdown + изображения
+  (зависимости: `python-docx`, `pymupdf`, `pillow`)
+
+```bash
+python scripts/docx_dump.py metodichka_servernye_prilozhenia.docx
+```
 
 ## Быстрый старт
 
@@ -89,6 +99,9 @@ python -m venv .venv
 .venv\Scripts\activate          # Windows
 pip install -r requirements/requirements.txt
 ```
+
+> В репозитории уже есть готовое окружение `.venv` (Python 3.14) со всеми
+> зависимостями проекта и библиотеками для чтения `.docx`/`.pdf`.
 
 1. Скопируйте переменные окружения и при необходимости поправьте DSN:
 
@@ -137,6 +150,21 @@ docker compose up -d --build --wait
 
 Схемы создаются миграцией (а также скриптом `docker/init-db.sql` при первом
 старте контейнера).
+
+## Основные эндпоинты
+
+| Метод | Путь | Назначение |
+| --- | --- | --- |
+| `GET` | `/post/many` | список постов |
+| `GET` | `/post/{post_id}` | пост по ID |
+| `POST` | `/post` | создание поста |
+| `PATCH` | `/post/{post_id}` | обновление поста |
+| `DELETE` | `/post/{post_id}` | удаление поста |
+| `GET` | `/user/many` | список пользователей |
+| `GET` | `/user/{user_id}` | пользователь по ID |
+| `POST` | `/user` | создание пользователя |
+| `PATCH` | `/user/{user_id}` | обновление пользователя |
+| `DELETE` | `/user/{user_id}` | удаление пользователя |
 
 ## Аутентификация (JWT)
 
