@@ -12,6 +12,7 @@ from src.schemas.data_transfer_objects import UserCreateDto
 from src.schemas.data_transfer_objects import UserFullDto
 from src.schemas.data_transfer_objects import UserShortDto
 from src.schemas.data_transfer_objects import UserUpdateDto
+from src.utils import CommonUtils
 
 
 class UserController(BaseControllerInterface):
@@ -69,7 +70,10 @@ class UserController(BaseControllerInterface):
             username=user_create_dto.username,
             email=user_create_dto.email,
             login=user_create_dto.login,
-            password=self._password_context.hash(user_create_dto.password),
+            password=CommonUtils.get_password_hash(
+                plain_password=user_create_dto.password,
+                password_context=self._password_context,
+            ),
         )
         created_user = await self._user_repository.upsert(dto=user_full_dto)
 
@@ -92,7 +96,10 @@ class UserController(BaseControllerInterface):
         update_values = user_update_dto.model_dump(exclude_none=True)
 
         if 'password' in update_values:
-            update_values['password'] = self._password_context.hash(update_values['password'])
+            update_values['password'] = CommonUtils.get_password_hash(
+                plain_password=update_values['password'],
+                password_context=self._password_context,
+            )
 
         user_full_dto = user_full_dto.model_copy(update=update_values)
         updated_user = await self._user_repository.upsert(dto=user_full_dto)

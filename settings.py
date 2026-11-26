@@ -24,6 +24,13 @@ class AppSettings(BaseSettings):
     USERS_SQL_SCHEMA: str = 'users'
     POSTS_SQL_SCHEMA: str = 'post'
 
+    # JWT
+    SECRET_KEY: str = 'change-me-in-production'
+    JWT_ALGORITHM: str = 'HS256'
+    ACCESS_TOKEN_EXPIRES_MINUTES: int = 15
+    REFRESH_TOKEN_EXPIRES_MINUTES: int = 60 * 24 * 30
+    APPLICATION_ID: int = 1
+
     # Отладка
     IS_DEBUG: bool = False
 

@@ -32,16 +32,22 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 ```
 .
 ├── main.py                 # точка входа, создание FastAPI-приложения
+├── settings.py             # настройки приложения (pydantic-settings)
+├── alembic/                # окружение и миграции Alembic
 ├── src/
 │   ├── controllers/        # бизнес-логика конечных точек
 │   ├── dependencies/       # зависимости FastAPI (DI)
+│   ├── enums/              # перечисления (регулярки, сообщения)
+│   ├── exceptions/         # кастомные ошибки и их обработчики
 │   ├── interfaces/         # базовые интерфейсы контроллеров и репозиториев
+│   ├── models/             # ORM-модели SQLAlchemy
 │   ├── repositories/       # слой работы с данными (БД, внешние системы)
 │   ├── routers/            # роутеры (группы конечных точек)
-│   ├── schemas/            # Pydantic-схемы и DTO
-│   └── utils/              # мапперы, декораторы, итераторы
+│   ├── schemas/            # Pydantic-схемы: common, DTO, requests, responses
+│   └── utils/              # мапперы, работа с JWT и паролями
 ├── requirements/
 │   └── requirements.txt    # зависимости проекта
+├── docker/init-db.sql      # создание схем БД при старте контейнера
 ├── Dockerfile
 ├── docker-compose.yml
 ├── CHANGELOG.md            # отчёт по лабораторным + ответы на вопросы
@@ -101,10 +107,36 @@ docker compose run --rm blog-api alembic upgrade head
 
 ## Схема БД
 
-- схема `users`: таблица `user` (пользователи);
+- схема `users`: таблицы `user` (пользователи), `refresh_token`, `access_token`;
 - схема `post`: таблица `post` (посты, FK `author_id → users.user.id`).
 
 Схемы создаются миграцией (а также скриптом `docker/init-db.sql` при первом
 старте контейнера).
+
+## Аутентификация (JWT)
+
+| Метод | Путь | Назначение |
+| --- | --- | --- |
+| `POST` | `/user` | регистрация (пароль хэшируется bcrypt) |
+| `POST` | `/authorization/login` | вход, выдаёт пару access/refresh токенов |
+| `POST` | `/authentication/verify_access_token` | проверка access-токена |
+| `POST` | `/authentication/refresh_tokens` | ротация пары токенов |
+| `POST` | `/authentication/logout` | выход (удаление refresh-токена) |
+| `DELETE` | `/authentication/delete_expired_tokens` | удаление просроченных токенов |
+
+Пример:
+
+```bash
+curl -X POST http://127.0.0.1:8000/authorization/login \
+  -H "Content-Type: application/json" \
+  -d "{\"login\":\"login\",\"password\":\"qwerty123\"}"
+```
+
+```json
+{"accessToken": "eyJhbGciOi...", "refreshToken": "eyJhbGciOi..."}
+```
+
+Секреты (`SECRET_KEY`, пароли БД) задаются в `.env`; в репозиторий файл не
+попадает — используйте `.env.example` как шаблон.
 
 Подробности по каждой лабораторной — в `CHANGELOG.md`.
