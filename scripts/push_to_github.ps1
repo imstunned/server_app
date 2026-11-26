@@ -1,4 +1,4 @@
-# Публикация проекта на GitHub
+﻿# Публикация проекта на GitHub
 #
 # Использование (из корня проекта):
 #   powershell -ExecutionPolicy Bypass -File scripts/push_to_github.ps1 -RepoUrl https://github.com/USER/REPO.git
