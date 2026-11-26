@@ -60,3 +60,4 @@ class UserRepository(BaseDbRepository[UserModel, UserFullDto, UserShortDto]):
             .values(last_login_at=func.now())
         )
         await self._async_db_session.execute(statement)
+        await self.commit()
