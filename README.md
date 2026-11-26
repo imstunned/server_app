@@ -80,9 +80,10 @@ pip install -r requirements/requirements.txt
    docker compose up -d database
    ```
 
-   > Если порт `5432` уже занят локальной PostgreSQL, измените маппинг в
-   > `docker-compose.yml` на `"5433:5432"` и укажите `:5433` в `SQL_DSN`.
-   > Внутри docker-сети приложение всегда обращается к `database:5432`.
+   > Если порт `5432` уже занят локальной PostgreSQL, задайте другой порт на хосте:
+   > `POSTGRES_PORT=5433 docker compose up -d database` (PowerShell:
+   > `$env:POSTGRES_PORT='5433'`). Внутри docker-сети приложение всегда
+   > обращается к `database:5432`.
 
 3. Примените миграции:
 
@@ -102,8 +103,10 @@ pip install -r requirements/requirements.txt
 
 ```bash
 docker compose up -d --build --wait
-docker compose run --rm blog-api alembic upgrade head
 ```
+
+Миграции применяются автоматически при старте контейнера
+(`docker/entrypoint.sh` выполняет `alembic upgrade head` перед запуском Uvicorn).
 
 ## Схема БД
 
