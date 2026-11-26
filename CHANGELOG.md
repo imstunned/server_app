@@ -63,3 +63,58 @@
 - Проект разбит на пакеты `controllers`, `dependencies`, `interfaces`, `repositories`,
   `routers`, `schemas`, `utils`.
 - Docker-образ обновлён: зависимости теперь лежат в `requirements/requirements.txt`.
+
+## Лабораторная работа №3 — базы данных, SQLAlchemy и миграции Alembic
+
+### Вопрос 1. За что отвечают поля инициализации класса `SettingsConfigDict`?
+
+- `env_file='.env'` — путь к файлу с переменными окружения, откуда читаются значения;
+- `env_file_encoding='utf-8'` — кодировка этого файла (важно для кириллицы в Windows);
+- `extra='ignore'` — переменные из `.env`, которых нет среди полей класса, не вызывают
+  ошибку и просто игнорируются (в файле есть, например, `POSTGRES_HOST`, которого нет
+  в настройках приложения).
+
+Дополнительно можно указать `case_sensitive` (регистрозависимость имён переменных),
+`env_prefix` (префикс, например `APP_`), `env_nested_delimiter` (для вложенных настроек).
+
+### Вопрос 2. Объяснить значение параметров в функции `mapped_column`
+
+- тип (`Integer`, `String(255)`, `Text`, `TIMESTAMP`, `Boolean`) — SQL-тип колонки;
+- `primary_key=True` — колонка является первичным ключом;
+- `autoincrement=True` — значение генерируется базой (`SERIAL`/`IDENTITY`);
+- `index=True` — создать индекс по колонке (ускоряет поиск);
+- `unique=True` — уникальность значений (например, `login`, `email`);
+- `nullable=False` — запрет `NULL`;
+- `default=...` — значение по умолчанию на стороне Python (ORM подставит при вставке);
+- `server_default=...` — значение по умолчанию на стороне БД (`false`, `now()`, `NULL`);
+- `comment='...'` — комментарий к колонке (попадает в схему БД и в миграцию);
+- `ForeignKey(UserModel.id, ondelete='CASCADE')` — внешний ключ и поведение при удалении
+  связанной записи.
+
+### Вопрос 3. Зачем нужен параметр `echo` в `create_async_engine`?
+
+`echo=True` включает логирование всех SQL-запросов (и параметров) в stdout через
+`logging`. Это нужно для отладки: видно, какие запросы реально уходят в БД, как
+формируются `INSERT/UPDATE/SELECT`, где появляются лишние запросы (проблема N+1).
+В production `echo` выключают — иначе логи растут и в них попадают чувствительные
+данные. В проекте значение берётся из настройки `IS_DEBUG`:
+`create_async_engine(app_settings.SQL_DSN, echo=app_settings.IS_DEBUG)`.
+
+### Что сделано
+
+- добавлены настройки приложения (`settings.py`, `.env`, `.env.example`);
+- созданы ORM-модели `UserModel`, `PostModel` и миксины `MixinAutoIdModel`,
+  `MixinSoftDeleteModel` (базовая модель — `src/models/base.py`);
+- настроен Alembic (асинхронный `env.py`, DSN из настроек, `include_schemas=True`)
+  и сгенерирована миграция `init tables` (создаёт схемы `users` и `post`);
+- реализован `BaseDbRepository` с методами `get_one_full_by_id`, `get_many_full`,
+  `get_many_short`, `upsert`, `delete_one_by_id`;
+- **дописан метод `upsert`**: если `id` не задан — создаётся объект, иначе
+  загружается существующий и обновляются переданные поля;
+- создан `UserController`, роутер `/user` и CRUD-эндпоинты пользователей;
+- CRUD постов переведён с хранения в памяти на PostgreSQL;
+- пароли пользователей хэшируются (passlib + bcrypt) при создании и обновлении;
+- добавлены кастомные ошибки (`BaseCustomError`, `BaseResponseError`, `ConflictError`)
+  и их обработчик (409 при дубликате логина);
+- `docker-compose.yml` дополнен сервисом `database` (postgres:17) с healthcheck
+  и томом для данных.

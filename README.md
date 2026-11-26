@@ -60,15 +60,51 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 python -m venv .venv
 .venv\Scripts\activate          # Windows
 pip install -r requirements/requirements.txt
-uvicorn main:app --reload
 ```
+
+1. Скопируйте переменные окружения и при необходимости поправьте DSN:
+
+   ```bash
+   copy .env.example .env
+   ```
+
+2. Поднимите PostgreSQL (или используйте уже установленный):
+
+   ```bash
+   docker compose up -d database
+   ```
+
+   > Если порт `5432` уже занят локальной PostgreSQL, измените маппинг в
+   > `docker-compose.yml` на `"5433:5432"` и укажите `:5433` в `SQL_DSN`.
+   > Внутри docker-сети приложение всегда обращается к `database:5432`.
+
+3. Примените миграции:
+
+   ```bash
+   alembic upgrade head
+   ```
+
+4. Запустите приложение:
+
+   ```bash
+   uvicorn main:app --reload
+   ```
 
 Документация API: <http://127.0.0.1:8000/docs>
 
-Запуск в контейнерах:
+Запуск всего стека в контейнерах:
 
 ```bash
 docker compose up -d --build --wait
+docker compose run --rm blog-api alembic upgrade head
 ```
+
+## Схема БД
+
+- схема `users`: таблица `user` (пользователи);
+- схема `post`: таблица `post` (посты, FK `author_id → users.user.id`).
+
+Схемы создаются миграцией (а также скриптом `docker/init-db.sql` при первом
+старте контейнера).
 
 Подробности по каждой лабораторной — в `CHANGELOG.md`.
