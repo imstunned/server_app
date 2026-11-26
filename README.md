@@ -27,6 +27,27 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 Каждая следующая ветка создаётся от `develop` после вливания предыдущей
 лабораторной (merge request → `develop`).
 
+## Структура проекта
+
+```
+.
+├── main.py                 # точка входа, создание FastAPI-приложения
+├── src/
+│   ├── controllers/        # бизнес-логика конечных точек
+│   ├── dependencies/       # зависимости FastAPI (DI)
+│   ├── interfaces/         # базовые интерфейсы контроллеров и репозиториев
+│   ├── repositories/       # слой работы с данными (БД, внешние системы)
+│   ├── routers/            # роутеры (группы конечных точек)
+│   ├── schemas/            # Pydantic-схемы и DTO
+│   └── utils/              # мапперы, декораторы, итераторы
+├── requirements/
+│   └── requirements.txt    # зависимости проекта
+├── Dockerfile
+├── docker-compose.yml
+├── CHANGELOG.md            # отчёт по лабораторным + ответы на вопросы
+└── docs/                   # методичка в Markdown и изображения
+```
+
 ## Материалы
 
 - `docs/metodichka_servernye_prilozhenia.md` — методичка в Markdown
