@@ -118,3 +118,87 @@
   и их обработчик (409 при дубликате логина);
 - `docker-compose.yml` дополнен сервисом `database` (postgres:17) с healthcheck
   и томом для данных.
+
+## Лабораторная работа №4 — аутентификация и авторизация с JWT
+
+### Вопрос 1. Что произойдёт с access-токеном, если удалить refresh-токен в БД?
+
+В модели `AccessTokenModel` есть внешний ключ
+`refresh_id → users.refresh_token.id` с `ondelete='CASCADE'`. Поэтому при удалении
+refresh-токена PostgreSQL каскадно удалит все связанные с ним access-токены.
+Практические следствия:
+
+- access-токен сразу становится недействительным, даже если его срок ещё не истёк
+  (проверка `verify_access_token` ищет запись в БД и вернёт `401`);
+- именно на этом построены `logout` и `refresh_tokens`: старый refresh-токен
+  удаляется, вместе с ним умирает и старая пара токенов, после чего выдаётся новая.
+
+### Вопрос 2. Зачем нужен `str` при определении родителей класса `RegexEnum`?
+
+`class RegexEnum(str, Enum)` — это строковое перечисление. Наследование от `str`
+даёт:
+
+- значения являются обычными строками (`RegexEnum.JWT_TOKEN == '^[\\w-]+...'`),
+  их можно передавать в `Field(pattern=...)`, `re`, `json.dumps` и т. п.;
+- Pydantic и FastAPI сериализуют такое перечисление как строку в JSON и OpenAPI,
+  без дополнительных конвертеров;
+- без миксина `str` обычный `Enum` не был бы строкой: `f'{RegexEnum.JWT_TOKEN}'`
+  дал бы `RegexEnum.JWT_TOKEN`, а JSON-сериализация потребовала бы `.value`.
+
+### Вопрос 3. Почему контроллер для работы с токенами был вынесен в отдельный контроллер?
+
+Потому что создание пары токенов — общая логика, которая нужна сразу нескольким
+сценариям: вход (`AuthorizationController`), обновление пары
+(`AuthenticationController`) и, потенциально, регистрация. Вынос в
+`TokensController`:
+
+- убирает дублирование (принцип DRY): `create_tokens` написан один раз;
+- соблюдает единственную ответственность (SRP): выпуск токенов отдельно от
+  проверки пароля и от проверки/отзыва токенов;
+- упрощает тестирование и переиспользование — оба контроллера наследуются от
+  `TokensController` и получают `create_tokens` бесплатно.
+
+### Задание 1. Логика авторизации и аутентификации
+
+1. **Регистрация** (`POST /user`): пароль хэшируется bcrypt (`CryptContext`), в БД
+   хранится только хэш.
+2. **Авторизация / вход** (`POST /authorization/login`): пользователь ищется по
+   логину, пароль проверяется через `password_context.verify`. При успехе
+   `TokensController.create_tokens` создаёт в БД refresh-токен, затем access-токен,
+   связанный с refresh-токеном, и возвращает два JWT (claims: `user`, `jti`, `iat`,
+   `exp`).
+3. **Аутентификация запросов** (`POST /authentication/verify_access_token`):
+   токен декодируется и проверяется подпись/срок (`python-jose`), затем
+   `_check_token` сверяет `jti`, `user`, `iat`, `exp` с записью в БД. Если запись
+   удалена (logout/refresh) — токен недействителен.
+4. **Обновление пары** (`POST /authentication/refresh_tokens`): проверяется
+   refresh-токен, старый удаляется (каскадом убивая старый access), выпускается
+   новая пара — это ротация токенов.
+5. **Выход** (`POST /authentication/logout`): refresh-токен удаляется из БД,
+   каскадно удаляется access-токен.
+6. **Очистка** (`DELETE /authentication/delete_expired_tokens`): удаляются
+   refresh-токены с истёкшим `expire_at`.
+
+### Задание 2. Зависимости репозиториев и контроллеров
+
+Добавлены `get_access_token_repository`, `get_refresh_token_repository`,
+`get_tokens_controller`, `get_authorization_controller`,
+`get_authentication_controller` (по аналогии с лабораторной №3).
+
+### Что сделано
+
+- добавлены настройки JWT (`SECRET_KEY`, `JWT_ALGORITHM`,
+  `ACCESS_TOKEN_EXPIRES_MINUTES`, `REFRESH_TOKEN_EXPIRES_MINUTES`);
+- созданы модели `AccessTokenModel` и `RefreshTokenModel` и миграция
+  `add token models`;
+- созданы DTO токенов, схемы запросов (`LoginRequestSchema`, `RefreshTokenRequest`,
+  `VerifyAccessTokenRequest`) и ответов (`TokensResponse`,
+  `VerifyAccessTokenResponse`, `DeleteExpiredTokensResponse`);
+- добавлены перечисления `RegexEnum` и `MessageEnum`, кастомные ошибки
+  (`ExpiredJwtTokenError`, `InvalidAccessTokenError`, `InvalidCredentialsError`,
+  `InvalidRefreshTokenError`, `InvalidTokenError`);
+- реализованы утилиты `CommonUtils` (создание/декодирование JWT, хэширование и
+  проверка пароля) и мапперы DTO;
+- созданы репозитории токенов, контроллеры `TokensController`,
+  `AuthenticationController`, `AuthorizationController`;
+- добавлены роутеры `/authorization` и `/authentication` и подключены к приложению.
