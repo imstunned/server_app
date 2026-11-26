@@ -1,5 +1,6 @@
 """Мапперы (сборка DTO)."""
 
+from src.schemas.data_transfer_objects import PostCreateDto
 from src.schemas.data_transfer_objects import PostFullDto
 
 
@@ -9,22 +10,16 @@ class PostFullDtoMapper:
     """
 
     @staticmethod
-    def map_post_full_dto(
-        post_id: int,
-        author_name: str,
-        content: str,
-    ) -> PostFullDto:
+    def map_from_create_dto(post_create_dto: PostCreateDto) -> PostFullDto:
         """
-        Сборка полного DTO поста.
+        Сборка полного DTO поста из DTO создания.
 
-        :param post_id: ID поста.
-        :param author_name: Имя автора.
-        :param content: Содержание поста.
+        :param post_create_dto: DTO создания поста.
         :return: Полный DTO поста.
         """
 
         return PostFullDto(
-            id=post_id,
-            author_name=author_name,
-            content=content,
+            author_id=post_create_dto.author_id,
+            name=post_create_dto.name,
+            content=post_create_dto.content,
         )

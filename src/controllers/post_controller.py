@@ -9,6 +9,7 @@ from src.schemas.data_transfer_objects import PostCreateDto
 from src.schemas.data_transfer_objects import PostFullDto
 from src.schemas.data_transfer_objects import PostShortDto
 from src.schemas.data_transfer_objects import PostUpdateDto
+from src.utils import PostFullDtoMapper
 
 
 class PostController(BaseControllerInterface):
@@ -46,11 +47,7 @@ class PostController(BaseControllerInterface):
         :return: Полный DTO созданного поста.
         """
 
-        post_full_dto = PostFullDto(
-            author_id=post_create_dto.author_id,
-            name=post_create_dto.name,
-            content=post_create_dto.content,
-        )
+        post_full_dto = PostFullDtoMapper.map_from_create_dto(post_create_dto=post_create_dto)
 
         return await self._post_repository.upsert(dto=post_full_dto)
 
