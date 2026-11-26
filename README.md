@@ -17,15 +17,37 @@ FastAPI с PostgreSQL, SQLAlchemy, Alembic и JWT-аутентификацией
 
 | Ветка | Содержимое |
 | --- | --- |
-| `main` | точка старта: README, .gitignore, .dockerignore |
+| `main` | итоговая версия проекта (все лабораторные влиты) |
 | `develop` | интеграционная ветка, сюда вливаются все лабораторные |
 | `feature/lab1` | ЛР1 — основы FastAPI, Git, Docker |
 | `feature/lab2` | ЛР2 — модели данных Pydantic и структура проекта |
 | `feature/lab3` | ЛР3 — БД, SQLAlchemy, миграции Alembic |
 | `feature/lab4` | ЛР4 — аутентификация и авторизация с JWT |
 
+Схема работы (GitFlow): `feature/labN` → Merge Request → `develop` → `main`.
 Каждая следующая ветка создаётся от `develop` после вливания предыдущей
-лабораторной (merge request → `develop`).
+лабораторной.
+
+## Публикация на GitHub
+
+Репозиторий уже инициализирован локально (ветки и коммиты готовы). Осталось
+создать пустой репозиторий на GitHub (**без** README и .gitignore) и выполнить:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts/push_to_github.ps1 `
+    -RepoUrl https://github.com/ВАШ_ЛОГИН/server_app.git
+```
+
+или вручную:
+
+```bash
+git remote add origin https://github.com/ВАШ_ЛОГИН/server_app.git
+git push -u origin main develop
+git push -u origin feature/lab1 feature/lab2 feature/lab3 feature/lab4
+```
+
+После пуша в GitHub создайте Pull Request'ы `feature/labN → develop` и
+`develop → main`.
 
 ## Структура проекта
 
